@@ -2,23 +2,23 @@ name: MAREC Grok Marketing Agent Cron
 
 on:
   schedule:
-    # 5:00 AM PST (13:00 UTC)
-    - cron: '0 13 * * *'
-    # 5:00 PM PST (01:00 UTC next day)
-    - cron: '0 1 * * *'
-    # 6:00 PM PST (02:00 UTC next day)
-    - cron: '0 2 * * *'
-  workflow_dispatch: # Allows manual trigger anytime from the GitHub Actions tab
+    # 5:00 AM PDT (12:00 UTC)
+    - cron: '0 12 * * *'
+    # 5:00 PM PDT (00:00 UTC next day)
+    - cron: '0 0 * * *'
+    # 8:00 PM PDT (03:00 UTC next day)
+    - cron: '0 3 * * *'
+  workflow_dispatch: # Enables manual trigger anytime from the Actions tab
 
 jobs:
   run-agent:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Fetch all history so git push works seamlessly
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -31,7 +31,7 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Execute Marketing Agent
+      - name: Execute Marketing Pipeline
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
@@ -40,10 +40,11 @@ jobs:
           HUNTER_API_KEY: ${{ secrets.HUNTER_API_KEY }}
         run: python main.py
 
-      - name: Commit & Push Database Updates (Prevent Duplicates)
+      - name: Commit & Push Updated Database
+        if: always()
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add database/leads.db
-          git commit -m "Auto-update leads.db after agent run [skip ci]" || echo "No database changes to commit."
-          git push
+          git add database/leads.db 2>/dev/null || git add leads.db 2>/dev/null || true
+          git commit -m "Auto-update leads.db after agent execution [skip ci]" || echo "No database updates to commit."
+          git push || echo "Git push skipped or no upstream changes."
