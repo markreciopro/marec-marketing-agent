@@ -1,29 +1,40 @@
 import os
 import sys
 
-# Ensure Python looks inside core/ and database/ directories
+# Ensure root directory and database folder are in system path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(BASE_DIR, "core"))
+sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "database"))
 
-# Import core workflow modules
-from core.lead_finder import fetch_leads
-from core.report_generator import generate_daily_trend_briefing
-from core.ai_generator import generate_email
-from core.sender import send_email, send_executive_report
-from database.db_client import save_lead, init_db, is_lead_processed
+# Direct imports from root and database folders
+try:
+    from lead_finder import fetch_leads
+    from report_generator import generate_daily_trend_briefing
+    from ai_generator import generate_email
+    from sender import send_email, send_executive_report
+except ImportError:
+    # Fallback if files are inside a core/ directory
+    from core.lead_finder import fetch_leads
+    from core.report_generator import generate_daily_trend_briefing
+    from core.ai_generator import generate_email
+    from core.sender import send_email, send_executive_report
+
+try:
+    from database.db_client import save_lead, init_db, is_lead_processed
+except ImportError:
+    from db_client import save_lead, init_db, is_lead_processed
 
 def run_marketing_pipeline():
     print("=" * 60)
     print("🚀 INITIALIZING MAREC INSIGHTS B2B MARKETING PIPELINE")
     print("=" * 60)
     
-    # 1. Initialize SQLite Database
+    # 1. Initialize Database
     try:
         init_db()
         print("✅ Database initialized successfully.")
     except Exception as e:
-        print(f"⚠️ Database initialization warning: {e}")
+        print(f"⚠️ Database initialization notice: {e}")
 
     # 2. Fetch Prospects
     try:
@@ -101,7 +112,7 @@ def run_marketing_pipeline():
     print(f"✅ PIPELINE RUN COMPLETE | Sent: {processed_count} | Skipped: {skipped_count} | Total: {total_evaluated}")
     print("=" * 60)
 
-    # 3. Always Dispatch Executive Summary Report
+    # 3. Dispatch Executive Summary Report
     print("📧 Dispatching Executive Marketing Report to mark.recio@marec.site...")
     try:
         send_executive_report(
