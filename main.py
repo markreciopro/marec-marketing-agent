@@ -1,42 +1,45 @@
 import os
 import sys
 
-# Ensure root directory and database folder are in system path
+# Get absolute path of repository root
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(BASE_DIR)
-sys.path.append(os.path.join(BASE_DIR, "database"))
 
-# Direct imports from root and database folders
+# Dynamically add root, core, and database directories to sys.path
+for folder in ["", "core", "database"]:
+    path = os.path.join(BASE_DIR, folder) if folder else BASE_DIR
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
+# Safe imports
 try:
     from lead_finder import fetch_leads
     from report_generator import generate_daily_trend_briefing
     from ai_generator import generate_email
     from sender import send_email, send_executive_report
 except ImportError:
-    # Fallback if files are inside a core/ directory
     from core.lead_finder import fetch_leads
     from core.report_generator import generate_daily_trend_briefing
     from core.ai_generator import generate_email
     from core.sender import send_email, send_executive_report
 
 try:
-    from database.db_client import save_lead, init_db, is_lead_processed
-except ImportError:
     from db_client import save_lead, init_db, is_lead_processed
+except ImportError:
+    from database.db_client import save_lead, init_db, is_lead_processed
 
 def run_marketing_pipeline():
     print("=" * 60)
     print("🚀 INITIALIZING MAREC INSIGHTS B2B MARKETING PIPELINE")
     print("=" * 60)
     
-    # 1. Initialize Database
+    # 1. Initialize SQLite Database
     try:
         init_db()
         print("✅ Database initialized successfully.")
     except Exception as e:
         print(f"⚠️ Database initialization notice: {e}")
 
-    # 2. Fetch Prospects
+    # 2. Fetch Lead Roster
     try:
         leads = fetch_leads()
     except Exception as e:
@@ -44,7 +47,7 @@ def run_marketing_pipeline():
         leads = []
 
     if not leads:
-        print("⚠️ No leads retrieved from source. Sending execution summary...")
+        print("⚠️ No leads retrieved from source. Sending execution summary report...")
         try:
             send_executive_report(evaluated_count=0, dispatched_count=0, skipped_count=0, dispatched_logs=[])
         except Exception as e:
@@ -112,7 +115,7 @@ def run_marketing_pipeline():
     print(f"✅ PIPELINE RUN COMPLETE | Sent: {processed_count} | Skipped: {skipped_count} | Total: {total_evaluated}")
     print("=" * 60)
 
-    # 3. Dispatch Executive Summary Report
+    # 3. Always Dispatch Executive Summary Report
     print("📧 Dispatching Executive Marketing Report to mark.recio@marec.site...")
     try:
         send_executive_report(
