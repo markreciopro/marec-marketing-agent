@@ -2,12 +2,12 @@ name: MAREC Grok Marketing Agent Cron
 
 on:
   schedule:
-    # 5:00 AM PDT (12:00 UTC)
-    - cron: '0 12 * * *'
-    # 5:00 PM PDT (00:00 UTC next day)
-    - cron: '0 0 * * *'
-    # 8:00 PM PDT (03:00 UTC next day)
-    - cron: '0 3 * * *'
+    # 5:17 AM PDT (12:17 UTC)
+    - cron: '17 12 * * *'
+    # 5:23 PM PDT (00:23 UTC next day)
+    - cron: '23 0 * * *'
+    # 10:17 PM PDT (05:17 UTC next day) - Tonight's run!
+    - cron: '17 5 * * *'
   workflow_dispatch: # Enables manual trigger anytime from the Actions tab
 
 jobs:
@@ -36,8 +36,6 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
-          APOLLO_API_KEY: ${{ secrets.APOLLO_API_KEY }}
-          HUNTER_API_KEY: ${{ secrets.HUNTER_API_KEY }}
         run: python main.py
 
       - name: Commit & Push Updated Database
@@ -45,6 +43,6 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add database/leads.db 2>/dev/null || git add leads.db 2>/dev/null || true
-          git commit -m "Auto-update leads.db after agent execution [skip ci]" || echo "No database updates to commit."
+          git add database/leads.db 2>/dev/null || true
+          git commit -m "Auto-update leads.db after agent execution [skip ci]" || echo "No database changes to commit."
           git push || echo "Git push skipped or no upstream changes."
