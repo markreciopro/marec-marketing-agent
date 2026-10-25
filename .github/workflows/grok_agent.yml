@@ -6,9 +6,11 @@ on:
     - cron: '17 12 * * *'
     # 5:23 PM PDT (00:23 UTC next day)
     - cron: '23 0 * * *'
-    # 10:17 PM PDT (05:17 UTC next day) - Tonight's run!
-    - cron: '17 5 * * *'
-  workflow_dispatch: # Enables manual trigger anytime from the Actions tab
+    # 11:17 PM PDT (06:17 UTC next day) - Tonight's test run!
+    - cron: '17 6 * * *'
+  workflow_dispatch: # Enables manual trigger from Actions tab
+  repository_dispatch: # Enables instant external triggers (Cron-Job.org / API)
+    types: [run-marketing-pipeline]
 
 jobs:
   run-agent:
