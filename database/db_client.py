@@ -1,40 +1,67 @@
-import sqlite3
 import os
+import sqlite3
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "leads.db")
+# Define absolute database path
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "leads.db")
+
+def get_connection():
+    """Establish and return a connection to the SQLite database."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 def init_db():
-    """Initializes the SQLite database table if it does not exist."""
-    conn = sqlite3.connect(DB_PATH)
+    """Initialize the SQLite leads database and create tables if they do not exist."""
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS processed_leads (
-            email TEXT PRIMARY KEY,
-            first_name TEXT,
+        CREATE TABLE IF NOT EXISTS leads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
             company TEXT,
-            title TEXT,
-            sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            email TEXT UNIQUE,
+            status TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
     conn.commit()
     conn.close()
 
-def is_lead_sent(email: str) -> bool:
-    """Checks if a lead email has already been processed."""
-    conn = sqlite3.connect(DB_PATH)
+def is_lead_processed(email):
+    """Check if an email address has already been processed in leads.db to prevent duplicate outreach."""
+    if not email:
+        return False
+    conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT 1 FROM processed_leads WHERE email = ?", (email,))
-    result = cursor.fetchone()
+    cursor.execute("SELECT id FROM leads WHERE email = ?", (email,))
+    row = cursor.fetchone()
     conn.close()
-    return result is not None
+    return row is not None
 
-def mark_lead_sent(email: str, first_name: str = "", company: str = "", title: str = ""):
-    """Records a processed lead into the database."""
-    conn = sqlite3.connect(DB_PATH)
+def save_lead(name, company, email, status="sent"):
+    """Insert or update a lead in the leads database."""
+    if not email:
+        return False
+    conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("""
-        INSERT OR REPLACE INTO processed_leads (email, first_name, company, title)
-        VALUES (?, ?, ?, ?)
-    """, (email, first_name, company, title))
-    conn.commit()
-    conn.close()
+    try:
+        cursor.execute("""
+            INSERT INTO leads (name, company, email, status)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(email) DO UPDATE SET
+                status=excluded.status,
+                name=excluded.name,
+                company=excluded.company
+        """, (name, company, email, status))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"⚠️ Error saving lead to database: {e}")
+        return False
+    finally:
+        conn.close()
+
+if __name__ == "__main__":
+    init_db()
+    print("✅ Database initialized at:", DB_PATH)
