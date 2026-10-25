@@ -2,14 +2,14 @@ name: MAREC Grok Marketing Agent Cron
 
 on:
   schedule:
-    # 5:17 AM PDT (12:17 UTC)
-    - cron: '17 12 * * *'
-    # 5:23 PM PDT (00:23 UTC next day)
-    - cron: '23 0 * * *'
-    # 11:17 PM PDT (06:17 UTC next day) - Tonight's test run!
-    - cron: '17 6 * * *'
-  workflow_dispatch: # Enables manual trigger from Actions tab
-  repository_dispatch: # Enables instant external triggers (Cron-Job.org / API)
+    # 5:00 AM PDT (12:00 UTC)
+    - cron: '0 12 * * *'
+    # 5:00 PM PDT (00:00 UTC next day)
+    - cron: '0 0 * * *'
+    # 11:00 PM PDT (06:00 UTC next day)
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+  repository_dispatch:
     types: [run-marketing-pipeline]
 
 jobs:
