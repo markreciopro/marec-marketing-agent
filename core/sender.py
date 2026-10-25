@@ -91,5 +91,4 @@ def send_executive_report(evaluated_count, dispatched_count, skipped_count, disp
         return False
 
 if __name__ == "__main__":
-    # Local Test Dispatch
-    send_executive_report(evaluated_count=5, dispatched_count=1, skipped_count=4, dispatched_logs=["Test Prospect (Aria) — test@example.com"])
+    send_executive_report(evaluated_count=5, dispatched_count=1, skipped_count=4, dispatched_logs=["Test Prospect — test@example.com"])
