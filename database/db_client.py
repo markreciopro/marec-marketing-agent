@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-# Define absolute database path
+# Define absolute path to database
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "leads.db")
 
@@ -64,4 +64,4 @@ def save_lead(name, company, email, status="sent"):
 
 if __name__ == "__main__":
     init_db()
-    print("✅ Database initialized at:", DB_PATH)
+    print("✅ Database client initialized successfully at:", DB_PATH)
