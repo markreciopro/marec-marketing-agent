@@ -1,31 +1,22 @@
 import os
 import sys
 
-# Get absolute path of repository root
+# Add repository root and core directory to Python path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CORE_DIR = os.path.join(BASE_DIR, "core")
+DB_DIR = os.path.join(BASE_DIR, "database")
 
-# Dynamically add root, core, and database directories to sys.path
-for folder in ["", "core", "database"]:
-    path = os.path.join(BASE_DIR, folder) if folder else BASE_DIR
-    if path not in sys.path:
-        sys.path.insert(0, path)
+if CORE_DIR not in sys.path:
+    sys.path.insert(0, CORE_DIR)
+if DB_DIR not in sys.path:
+    sys.path.insert(0, DB_DIR)
 
-# Safe imports
-try:
-    from lead_finder import fetch_leads
-    from report_generator import generate_daily_trend_briefing
-    from ai_generator import generate_email
-    from sender import send_email, send_executive_report
-except ImportError:
-    from core.lead_finder import fetch_leads
-    from core.report_generator import generate_daily_trend_briefing
-    from core.ai_generator import generate_email
-    from core.sender import send_email, send_executive_report
-
-try:
-    from db_client import save_lead, init_db, is_lead_processed
-except ImportError:
-    from database.db_client import save_lead, init_db, is_lead_processed
+# Direct imports from core/ and database/
+from lead_finder import fetch_leads
+from report_generator import generate_daily_trend_briefing
+from ai_generator import generate_email
+from sender import send_email, send_executive_report
+from db_client import save_lead, init_db, is_lead_processed
 
 def run_marketing_pipeline():
     print("=" * 60)
@@ -85,12 +76,16 @@ def run_marketing_pipeline():
 
         # Assemble Email Body
         print(f"   ✍️ Assembling personalized outreach message...")
-        email_content = generate_email(
-            lead_name=name,
-            company_name=company,
-            title=title,
-            trend_briefing=trend_briefing
-        )
+        try:
+            email_content = generate_email(
+                lead_name=name,
+                company_name=company,
+                title=title,
+                trend_briefing=trend_briefing
+            )
+        except Exception as e:
+            print(f"   ⚠️ AI generator warning: {e}")
+            email_content = f"Hello {name},\n\nWe at MAREC Insights optimize hospitality operations and workforce decision intelligence for executives at {company}."
 
         # Dispatch Email
         if email:
