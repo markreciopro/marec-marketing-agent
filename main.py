@@ -1,57 +1,59 @@
 import os
-import sys
-from dotenv import load_dotenv
-from core.lead_finder import fetch_leads
-from core.ai_generator import generate_grok_email
-from core.sender import send_email
-from database.db_client import init_db, is_lead_sent, mark_lead_sent
-
-load_dotenv(override=True)
+from lead_finder import fetch_leads
+from report_generator import generate_daily_trend_briefing
+from ai_generator import generate_email
+from db_client import save_lead, init_db, is_lead_processed
+from sender import send_email
 
 def run_marketing_pipeline():
     print("🚀 Initializing MAREC Insights Marketing Agent Pipeline...")
-    init_db()
     
+    init_db()
     leads = fetch_leads()
+    
     if not leads:
-        print("ℹ️ No leads retrieved.")
+        print("No leads retrieved.")
         return
 
-    sent_count = 0
+    processed_count = 0
     skipped_count = 0
+    dispatched_leads = []
 
     for lead in leads:
-        email = lead.get("email")
-        first_name = lead.get("first_name", "Executive")
-        title = lead.get("role", lead.get("title", "Director of Hospitality"))
+        name = lead.get("name", "Valued Partner")
         company = lead.get("company", "Aria Resort & Casino Las Vegas")
+        email = lead.get("email")
+        title = lead.get("title", "Luxury Hospitality Leader")
 
-        if is_lead_sent(email):
-            print(f"⏩ Skipping {email} (already processed in database).")
+        if email and is_lead_processed(email):
+            print(f"⏩ Lead already processed, skipping: {email}")
             skipped_count += 1
             continue
 
-        print(f"🧠 Generating Grok AI email content for {first_name} at {company}...")
-        content = generate_grok_email(first_name, title, company)
+        print(f"\n📊 1. Generating daily research trend briefing for {company}...")
+        # Generate dynamic today's date & cited research trend
+        trend_briefing = generate_daily_trend_briefing(company_name=company, role=title)
 
-        print(f"📧 Dispatching outreach message to {email}...")
-        
-        # Pass parameters cleanly matching core/sender.py signature
-        success = send_email(
-            email,
-            content["subject"],
-            content["text"],
-            content["html"]
+        print(f"📧 2. Crafting personalized email with daily trend brief...")
+        # Pass trend_briefing into email generator
+        email_content = generate_email(
+            lead_name=name,
+            company_name=company,
+            title=title,
+            trend_briefing=trend_briefing
         )
 
-        if success:
-            mark_lead_sent(email, first_name, company, title)
-            sent_count += 1
-            print(f"✅ Successfully sent to {email}")
+        if email:
+            print(f"📤 3. Dispatching email to {email}...")
+            subject = f"Optimizing Hospitality Analytics & Workforce Intelligence for {company}"
+            send_email(to_email=email, subject=subject, body=email_content)
+            save_lead(name=name, company=company, email=email, status="sent")
+            processed_count += 1
+            dispatched_leads.append(f"{name} ({company}) - {email}")
         else:
-            print(f"❌ Failed to dispatch email to {email}")
+            print(f"⚠️ No email address found for {name}.")
 
-    print(f"\n📊 Summary: {sent_count} Sent, {skipped_count} Skipped.")
+    print(f"\n✅ Run Complete! Sent: {processed_count} | Skipped: {skipped_count}")
 
 if __name__ == "__main__":
     run_marketing_pipeline()
