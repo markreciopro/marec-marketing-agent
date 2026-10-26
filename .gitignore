@@ -1,5 +1,12 @@
+# Virtual Environments
 venv/
+.venv/
+env/
+
+# Python Cache
 __pycache__/
-.env
+*.py[cod]
+
+# SQLite Databases & Local Configs
 *.db
-.DS_Store
+.env
